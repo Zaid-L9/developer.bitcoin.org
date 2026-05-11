@@ -39,6 +39,43 @@ Start ``bitcoind`` in regtest mode to create a private block chain.
 
 Generate 101 blocks using a special `RPC <../reference/rpc/index.html>`__ which is only available in regtest mode. This takes less than a second on a generic PC. Because this is a new block chain using Bitcoin’s default rules, the first blocks pay a block reward of 50 bitcoins. Unlike mainnet, in regtest mode only the first 150 blocks pay a reward of 50 bitcoins. However, a block must have 100 confirmations before that reward can be spent, so we generate 101 blocks to get access to the coinbase transaction from block #1.
 
+Regtest troubleshooting
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Most regtest errors are caused by using commands from a different Bitcoin Core
+version, using an address from another network, or trying to spend newly-mined
+coinbase outputs too early. The following table lists common errors and how to
+resolve them.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Error
+     - Likely cause
+     - Resolution
+   * - ``Method not found (code -32601)``
+     - The ``generate`` RPC was removed in newer Bitcoin Core releases.
+     - Use ``generatetoaddress`` or ``generatetodescriptor``. For example:
+       ``bitcoin-cli -regtest generatetoaddress 101 $(bitcoin-cli -regtest getnewaddress)``.
+   * - ``Requested wallet does not exist or is not loaded (code -18)`` or
+       ``No wallet is loaded (code -18)``
+     - ``getnewaddress`` needs a loaded wallet.
+     - Create or load a regtest wallet first, for example:
+       ``bitcoin-cli -regtest createwallet testwallet``.
+   * - ``Invalid address or key (code -5)``
+     - The mining address is not valid for the active regtest network.
+     - Generate the address with ``bitcoin-cli -regtest getnewaddress`` or use
+       another address created by the same regtest node.
+   * - ``CreateNewBlock: TestBlockValidity failed: ... (code 67)``
+     - The node could not validate the block template it tried to mine. This can
+       happen with stale regtest state, old commands, or invalid transaction data.
+     - Stop Bitcoin Core, back up any wallets you care about, delete only the
+       ``regtest`` chainstate directory, restart with ``-regtest``, and run the
+       current ``generatetoaddress`` example again.
+   * - ``Insufficient funds (code -6)``
+     - Coinbase rewards have fewer than 100 confirmations.
+     - Mine 101 blocks before spending the first coinbase reward.
+
 .. highlight:: bash
 
 ::
